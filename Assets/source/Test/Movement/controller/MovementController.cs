@@ -29,6 +29,8 @@ public class MovementController : MonoBehaviour
 
     private Boolean jumpPressed = false;
 
+    private Boolean editMode = false;
+
     #region Properties
 
     public float TerminalVelocity
@@ -59,6 +61,11 @@ public class MovementController : MonoBehaviour
     {
         transform.position = StartingPosition;
         movementModel.StopMovement();
+    }
+
+    public void editModeToggle()
+    {
+        editMode = !editMode;
     }
 
     #endregion
@@ -279,7 +286,7 @@ public class MovementController : MonoBehaviour
 
     void OnCollisionEnter2D( Collision2D collision )
     {
-        if ( collision.collider.tag == "floor" )
+        if ( collision.collider.tag == "floor" || editMode )
         {
             if ( collision.contacts[ 0 ].normal.y > 0.4f )
             {
@@ -290,19 +297,23 @@ public class MovementController : MonoBehaviour
                 movementModel.State = MovementState.JUMPED;
             }
         }
+        else if ( collision.collider.tag == "Environment" )
+        {
+            resetCharacter();
+        }
     }
 
     void OnCollisionExit2D( Collision2D collision )
     {
-        if ( collision.collider.tag == "floor" )
+        if ( collision.collider.tag == "floor" || editMode )
         {
-            if ( movementModel.State == MovementState.MOVING || movementModel.State == MovementState.STOPPED )
+            if ( movementModel.State == MovementState.MOVING || movementModel.State == MovementState.STOPPED || movementModel.State == MovementState.ACCELERATING && collision.contacts[ 0 ].normal.y > 0.4f )
             {
                 movementModel.State = MovementState.FALL_FORGIVENESS;
                 startFallTime = Time.time;
                 fallDeltaTime = 0f;
             }
-            else if ( movementModel.State == MovementState.JUMPING )
+            else if ( movementModel.State == MovementState.JUMPING && collision.contacts[ 0 ].normal.y > 0.4f )
             {
                 GameObject jumpGO = GameObject.Instantiate( jumpEffect, new Vector2( transform.position.x, transform.position.y - ( transform.localScale.y / 2 ) ), Quaternion.identity ) as GameObject;
 
