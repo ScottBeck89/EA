@@ -9,6 +9,8 @@ public class MovementController : MonoBehaviour
 {
     public MovementModel movementModel;
 
+    public GameObject jumpEffect;
+
     private Vector3 StartingPosition;
 
     private float terminalVelocity;
@@ -299,6 +301,12 @@ public class MovementController : MonoBehaviour
                 movementModel.State = MovementState.FALL_FORGIVENESS;
                 startFallTime = Time.time;
                 fallDeltaTime = 0f;
+            }
+            else if ( movementModel.State == MovementState.JUMPING )
+            {
+                GameObject jumpGO = GameObject.Instantiate( jumpEffect, new Vector2( transform.position.x, transform.position.y - ( transform.localScale.y / 2 ) ), Quaternion.identity ) as GameObject;
+
+                Destroy( jumpGO, 2.0f );
             }
         }
     }
