@@ -1,0 +1,17 @@
+﻿<Properties>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\scripts\ReUse\Orbit.cs">
+    <Files>
+      <File FileName="Assets\scripts\Orbiter.cs" Line="8" Column="36" />
+      <File FileName="Assets\scripts\CollideAndOrbit.cs" Line="32" Column="1" />
+      <File FileName="Assets\scripts\ReUse\Orbit.cs" Line="37" Column="3" />
+      <File FileName="Assets\scripts\ReUse\Hover.cs" Line="19" Column="44" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore>
+      <Breakpoint file="C:\UnityProjects\Squatters\Assets\scripts\CollideAndOrbit.cs" line="15" />
+    </BreakpointStore>
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>

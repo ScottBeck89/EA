@@ -1,0 +1,8 @@
+Wall Torch - licensed under CC0 or public domain / no licensing or usage restrictions
+
+Unity-specific notes:
+
+* Import 'Wall Torch.unitypackage' to use the fancy torch prefab, which does more stuff than just the model and textures alone.
+* The material is set up for low-light conditions, so you might want to adjust it if you're placing it in daylight.
+* The flame particle system is set to "world" coordinates so you can swing the torch around, but there may be performance benefits for setting it to "local" coordinates (if it's mounted on a wall or something).
+* The torch has a capsule collider enabled which is optimized for use as a static environmental object, but for more accurate physics you may want to replace it with a mesh collider, and if the torch is held in a player's hand the collider should be disabled altogether.
