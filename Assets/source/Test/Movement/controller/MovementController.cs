@@ -31,6 +31,10 @@ public class MovementController : MonoBehaviour
 
     private Boolean editMode = false;
 
+    private float wallHugDirection = 0f;
+
+    private Collider2D currentFloor = null;
+
     #region Properties
 
     public float TerminalVelocity
@@ -276,6 +280,58 @@ public class MovementController : MonoBehaviour
 
                     break;
                 }
+            case MovementState.HITTING_WALL:
+                {
+                    if ( movementModel.PreviousState != MovementState.JUMPING || verticalInput == 0 || jumpDeltaTime > jumpLeniency )
+                    {
+                        movementModel.State = MovementState.HUGGING_WALL;
+                        break;
+                    }
+
+                    if ( horizontalInput > 0f && wallHugDirection > 0f )
+                    {
+                        //move off the wall
+                        movementModel.State = MovementState.FALL_FORGIVENESS;
+                    }
+                    else if ( horizontalInput < 0f && wallHugDirection < 0f )
+                    {
+                        //move off the wall
+                        movementModel.State = MovementState.FALL_FORGIVENESS;
+                    }
+                    else if ( Mathf.Abs( horizontalInput ) > 0f )
+                    {
+                        movementModel.WallHangFactor = 0.75f;
+                    }
+                    else
+                    {
+                        movementModel.WallHangFactor = 1f;
+                    }
+
+                    break;
+                }
+            case MovementState.HUGGING_WALL:
+                {
+                    if ( horizontalInput > 0f && wallHugDirection > 0f )
+                    {
+                        //move off the wall
+                        movementModel.State = MovementState.FALL_FORGIVENESS;
+                    }
+                    else if ( horizontalInput < 0f && wallHugDirection < 0f )
+                    {
+                        //move off the wall
+                        movementModel.State = MovementState.FALL_FORGIVENESS;
+                    }
+                    else if ( Mathf.Abs( horizontalInput ) > 0f )
+                    {
+                        movementModel.WallHangFactor = 0.25f;
+                    }
+                    else
+                    {
+                        movementModel.WallHangFactor = 1f;
+                    }
+
+                    break;
+                }
             default:
                 {
 
@@ -290,11 +346,18 @@ public class MovementController : MonoBehaviour
         {
             if ( collision.contacts[ 0 ].normal.y > 0.4f )
             {
+                currentFloor = collision.collider;
                 movementModel.State = MovementState.STOPPED;
             }
             else if ( collision.contacts[ 0 ].normal.y < -0.4f )
             {
+                currentFloor = null;
                 movementModel.State = MovementState.JUMPED;
+            }
+            else if ( Mathf.Abs( collision.contacts[ 0 ].normal.x ) > .6f && currentFloor == null )
+            {
+                wallHugDirection = collision.contacts[ 0 ].normal.x;
+                movementModel.State = MovementState.HITTING_WALL;
             }
         }
         else if ( collision.collider.tag == "Environment" )
@@ -307,14 +370,20 @@ public class MovementController : MonoBehaviour
     {
         if ( collision.collider.tag == "floor" || editMode )
         {
-            if ( movementModel.State == MovementState.MOVING || movementModel.State == MovementState.STOPPED || movementModel.State == MovementState.ACCELERATING && collision.contacts[ 0 ].normal.y > 0.4f )
+            if ( movementModel.State == MovementState.MOVING || movementModel.State == MovementState.STOPPED || 
+                movementModel.State == MovementState.ACCELERATING && collision.contacts[ 0 ].normal.y > 0.4f || 
+                movementModel.State == MovementState.HITTING_WALL || movementModel.State == MovementState.HUGGING_WALL )
             {
+                currentFloor = null;
+
                 movementModel.State = MovementState.FALL_FORGIVENESS;
                 startFallTime = Time.time;
                 fallDeltaTime = 0f;
             }
             else if ( movementModel.State == MovementState.JUMPING && collision.contacts[ 0 ].normal.y > 0.4f )
             {
+                currentFloor = null;
+
                 GameObject jumpGO = GameObject.Instantiate( jumpEffect, new Vector2( transform.position.x, transform.position.y - ( transform.localScale.y / 2 ) ), Quaternion.identity ) as GameObject;
 
                 Destroy( jumpGO, 2.0f );

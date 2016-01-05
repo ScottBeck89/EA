@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,6 +17,8 @@ public class MovementView : MonoBehaviour
     public Text absoluteVelocity;
 
     public Text movementState;
+
+    public Text previousMovementState;
 
     public Slider absoluteMaxVelocitySlider;
 
@@ -36,11 +38,19 @@ public class MovementView : MonoBehaviour
         verticalVelocity.text = moveController.MovementModel.MyRigidbody.velocity.y.ToString();
         absoluteVelocity.text = moveController.MovementModel.MyRigidbody.velocity.magnitude.ToString();
         movementState.text = moveController.movementModel.State.ToString();
+        previousMovementState.text = moveController.movementModel.PreviousState.ToString();
     }
 
 
     void Start()
     {
+        setValues();
+    }
+
+    private IEnumerator setValues()
+    {
+        yield return new WaitForEndOfFrame();
+
         if ( absoluteMaxVelocitySlider != null )
         {
             absoluteMaxVelocitySlider.minValue = 10f;
@@ -104,6 +114,7 @@ public class MovementView : MonoBehaviour
         horizontalAccelerationSlider.gameObject.SetActive( !horizontalAccelerationSlider.gameObject.activeSelf );
         linearDragSlider.gameObject.SetActive( !linearDragSlider.gameObject.activeSelf );
         GravityScaleSlider.gameObject.SetActive( !GravityScaleSlider.gameObject.activeSelf );
+        StartCoroutine( setValues() );
     }
 
     public void AbsoluteMaxVelocityUpdated( float value )

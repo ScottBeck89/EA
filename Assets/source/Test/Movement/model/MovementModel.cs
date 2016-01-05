@@ -14,8 +14,8 @@ public enum MovementState
     FALLING,
     JUMPING,
     JUMPED,
-    JUMPING_INTO_WALL,
-    WALL_CLIMBING,
+    HITTING_WALL,
+    HUGGING_WALL,
 }
 [Serializable]
 [RequireComponent(typeof( Rigidbody2D ))]
@@ -26,6 +26,8 @@ public class MovementModel : MonoBehaviour
     private float absoluteMaxVelocity = 12.00f;
 
     private float terminalVelocity = 9.81f;
+
+    private float minimumFallingVelocity = -1.00f;
 
     private float horizontalTerminalVelocity = 10.00f;
 
@@ -43,9 +45,20 @@ public class MovementModel : MonoBehaviour
 
     private MovementState state = MovementState.STOPPED;
 
+    private MovementState previousState = MovementState.STOPPED;
+
     private Vector2 deltaForces = Vector2.zero;
 
     private int horizontalDirection = 1;
+
+    private Boolean jumped = false;
+
+    private float jumpStartTime = 0f;
+
+    private float jumpDeltaTime = 0f;
+
+    private float wallHangFactor = 5f;
+
 
     #region Properties
 
@@ -155,7 +168,21 @@ public class MovementModel : MonoBehaviour
         }
         set
         {
+            print( "STATE:   " + state );
+            previousState = state;
             state = value;
+        }
+    }
+
+    public MovementState PreviousState
+    {
+        get
+        {
+            return previousState;
+        }
+        set
+        {
+            previousState = value;
         }
     }
 
@@ -164,6 +191,27 @@ public class MovementModel : MonoBehaviour
         get
         {
             return myRigidBody;
+        }
+    }
+
+    public Boolean Jumped
+    {
+        get
+        {
+            return jumped;
+        }
+    }
+
+    public float WallHangFactor
+    {
+        get
+        {
+            return wallHangFactor;
+        }
+        set
+        {
+            wallHangFactor = Mathf.Clamp( value, 0.25f, 1.0f );
+            minimumFallingVelocity = -terminalVelocity * wallHangFactor;
         }
     }
 
@@ -177,7 +225,19 @@ public class MovementModel : MonoBehaviour
         state = MovementState.STOPPED;
     }
 
-    public void StopJumping()
+    public void StopJump()
+    {
+        jumped = false;
+    }
+
+    public void Jump()
+    {
+        jumpStartTime = Time.time;
+        jumpDeltaTime = 0f;
+        jumped = true;
+    }
+
+    public void WallHug()
     {
 
     }
@@ -220,7 +280,7 @@ public class MovementModel : MonoBehaviour
             myRigidBody.AddRelativeForce( deltaForces );
             if ( Mathf.Abs( myRigidBody.velocity.x ) >= horizontalTerminalVelocity )
             {
-                state = MovementState.MOVING;
+                State = MovementState.MOVING;
             }
         } 
         else if ( state == MovementState.MOVING )
@@ -229,6 +289,7 @@ public class MovementModel : MonoBehaviour
         }
         else if ( state == MovementState.STOPPED )
         {
+            if ( previousState == MovementState.HITTING_WALL )
             myRigidBody.velocity = new Vector2( 0, myRigidBody.velocity.y );
         }
         else if ( state == MovementState.JUMPING )
@@ -239,6 +300,18 @@ public class MovementModel : MonoBehaviour
         else if ( state == MovementState.JUMPED || state == MovementState.FALLING )
         {
             myRigidBody.velocity = new Vector2( myRigidBody.velocity.x, myRigidBody.velocity.y );
+            myRigidBody.AddRelativeForce( deltaForces );
+        }
+        else if ( state == MovementState.HITTING_WALL )
+        {
+            myRigidBody.velocity = new Vector2( 0, jumpMaxVelocity );
+            myRigidBody.AddRelativeForce( deltaForces );
+        }
+        else if ( state == MovementState.HUGGING_WALL )
+        {
+            float y = Mathf.Lerp( myRigidBody.velocity.y, minimumFallingVelocity, gravityScale * Time.fixedDeltaTime );
+            print( myRigidBody.velocity.y + "            " + minimumFallingVelocity + "    " + y);
+            myRigidBody.velocity = new Vector2( 0,  y );
             myRigidBody.AddRelativeForce( deltaForces );
         }
 
