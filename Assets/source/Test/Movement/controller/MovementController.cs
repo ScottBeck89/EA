@@ -201,7 +201,6 @@ public class MovementController : MonoBehaviour
                 {
                     if ( jumpDeltaTime > jumpLeniency || verticalInput == 0 )
                     {
-                        //movementModel.StopJumping();
                         movementModel.State = MovementState.JUMPED;
                     }
 

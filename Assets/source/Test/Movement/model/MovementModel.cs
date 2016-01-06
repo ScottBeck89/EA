@@ -23,25 +23,27 @@ public class MovementModel : MonoBehaviour
 {
     private Rigidbody2D myRigidBody;
 
-    private float absoluteMaxVelocity = 12.00f;
+    private float absoluteMaxVelocity = 37.00f;
 
-    private float terminalVelocity = 9.81f;
+    private float terminalVelocity = 25f;
 
     private float minimumFallingVelocity = -1.00f;
 
-    private float horizontalTerminalVelocity = 10.00f;
+    private float horizontalTerminalVelocity = 20.00f;
 
-    private float horizontalAcceleration = 20.00f;
+    private float horizontalAcceleration = 100.00f;
 
-    private float gravityScale = 10.00f;
+    private float gravityScale = 5.00f;
 
-    private float linearDrag = 0.1f;
+    private float linearDrag = 1.00f;
 
     private float jumpForce = 5.00f;
 
     private float jumpMaxVelocity = 10.00f;
 
     private float runningThreshold = 0.05f;
+
+    private float jumpLeniency = 0.3f;
 
     private MovementState state = MovementState.STOPPED;
 
@@ -160,6 +162,18 @@ public class MovementModel : MonoBehaviour
         }
     }
 
+    public float JumpLeniency
+    {
+        get
+        {
+            return jumpLeniency;
+        }
+        set
+        {
+            jumpLeniency = value;
+        }
+    }
+
     public MovementState State
     {
         get
@@ -168,7 +182,6 @@ public class MovementModel : MonoBehaviour
         }
         set
         {
-            print( "STATE:   " + state );
             previousState = state;
             state = value;
         }
@@ -222,7 +235,7 @@ public class MovementModel : MonoBehaviour
     public void StopMovement()
     {
         myRigidBody.velocity = Vector3.zero;
-        state = MovementState.STOPPED;
+        jumped = false;
     }
 
     public void StopJump()
@@ -232,8 +245,6 @@ public class MovementModel : MonoBehaviour
 
     public void Jump()
     {
-        jumpStartTime = Time.time;
-        jumpDeltaTime = 0f;
         jumped = true;
     }
 
@@ -245,10 +256,6 @@ public class MovementModel : MonoBehaviour
     public void MoveHorizontally( int direction )
     {
         horizontalDirection = direction;
-        /*if ( state == MovementState.MOVING || state == MovementState.STOPPED )
-        {
-            deltaForces = new Vector2( horizontalTerminalVelocity * direction, deltaForces.y );
-        }*/
     }
 
     public void ApplyHorizontalForce( int direction )
@@ -265,16 +272,21 @@ public class MovementModel : MonoBehaviour
     {
         myRigidBody = GetComponent<Rigidbody2D>();
 
-        absoluteMaxVelocity = PlayerPrefs.GetFloat( "AbsoluteMaxVelocity" );
-        terminalVelocity = PlayerPrefs.GetFloat( "TerminalVelocity" );
-        horizontalTerminalVelocity = PlayerPrefs.GetFloat( "HorizontalTerminalVelocity" );
-        horizontalAcceleration = PlayerPrefs.GetFloat( "HorizontalAcceleration" );
-        gravityScale = PlayerPrefs.GetFloat( "GravityScale" );
-        linearDrag = PlayerPrefs.GetFloat( "LinearDrag" );
+        if ( PlayerPrefs.GetString( "UseCustomSettings" ) == "true" )
+        {
+            absoluteMaxVelocity = PlayerPrefs.GetFloat( "AbsoluteMaxVelocity" );
+            terminalVelocity = PlayerPrefs.GetFloat( "TerminalVelocity" );
+            horizontalTerminalVelocity = PlayerPrefs.GetFloat( "HorizontalTerminalVelocity" );
+            horizontalAcceleration = PlayerPrefs.GetFloat( "HorizontalAcceleration" );
+            gravityScale = PlayerPrefs.GetFloat( "GravityScale" );
+            linearDrag = PlayerPrefs.GetFloat( "LinearDrag" );
+        }
     }
 
     private void FixedUpdate()
     {
+        jumpDeltaTime += Time.fixedDeltaTime;
+
         if ( state == MovementState.ACCELERATING )
         {
             myRigidBody.AddRelativeForce( deltaForces );
@@ -310,7 +322,6 @@ public class MovementModel : MonoBehaviour
         else if ( state == MovementState.HUGGING_WALL )
         {
             float y = Mathf.Lerp( myRigidBody.velocity.y, minimumFallingVelocity, gravityScale * Time.fixedDeltaTime );
-            print( myRigidBody.velocity.y + "            " + minimumFallingVelocity + "    " + y);
             myRigidBody.velocity = new Vector2( 0,  y );
             myRigidBody.AddRelativeForce( deltaForces );
         }

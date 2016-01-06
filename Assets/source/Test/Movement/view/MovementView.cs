@@ -209,6 +209,8 @@ public class MovementView : MonoBehaviour
         PlayerPrefs.SetFloat( "HorizontalAcceleration", moveController.MovementModel.HorizontalAcceleration );
         PlayerPrefs.SetFloat( "LinearDrag", moveController.MovementModel.LinearDrag );
         PlayerPrefs.SetFloat( "GravityScale", moveController.MovementModel.GravityScale );
+
+        PlayerPrefs.SetString( "UseCustomSettings", "true" );
     }
 
     public static float Round( float value, int digits )

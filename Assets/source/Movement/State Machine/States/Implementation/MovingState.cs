@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-public class StoppedState : IMovementState
+public class MovingState: IMovementState
 {
-    private MovementState state = MovementState.STOPPED;
+    private MovementState state = MovementState.MOVING;
 
     private MovementModel model;
 
@@ -19,7 +19,7 @@ public class StoppedState : IMovementState
         }
     }
 
-    public StoppedState( MovementModel model, MovementStateManager manager )
+    public MovingState( MovementModel model, MovementStateManager manager )
     {
         this.model = model;
         this.manager = manager;
@@ -28,19 +28,22 @@ public class StoppedState : IMovementState
 
     public void OnEnterState()
     {
-        model.StopMovement();
+
     }
 
     public void OnUpdateState(PlayerInputs input)
     {
-        if ( input.horizontalInput > model.RunningThreshold || input.horizontalInput < -model.RunningThreshold )
+        if ( input.horizontalInput > model.RunningThreshold )
         {
-            manager.ChangeState( MovementState.ACCELERATING );
-            return;
+            model.MoveHorizontally( 1 );
+        }
+        else if ( input.horizontalInput < -model.RunningThreshold )
+        {
+            model.MoveHorizontally( -1 );
         }
         else
         {
-            model.StopMovement();
+            manager.ChangeState( MovementState.STOPPED );
         }
 
         if ( input.verticalInput > 0 && !model.Jumped )

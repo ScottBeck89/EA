@@ -17,7 +17,7 @@ public interface IMovementState
     /// Enters a state.
     /// </summary>
     /// <param name="transitionTime">The time at which the state was entered</param>
-    void OnEnterState( float transitionTime );
+    void OnEnterState();
 
     /// <summary>
     /// Handles input based on the state's requirements.

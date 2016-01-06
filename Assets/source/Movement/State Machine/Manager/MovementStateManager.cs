@@ -11,9 +11,13 @@ public class MovementStateManager : MonoBehaviour
 
     public MovementModel MovementModel;
 
+    private IMovementState PreviousState;
+
     private IMovementState CurrentState;
 
-    protected Boolean jumpPressed = false;
+    private IMovementState NextState;
+
+    private Boolean changedState = false;
 
     private void Start()
     {
@@ -21,34 +25,58 @@ public class MovementStateManager : MonoBehaviour
         {
             case MovementState.STOPPED:
                 {
-                    CurrentState = new StoppedState( MovementModel );
-                    CurrentState.OnEnterState( Time.time );
+                    CurrentState = new StoppedState( MovementModel, this );
 
                     break;
                 }
         }
+
+        PreviousState = CurrentState;
+        CurrentState.OnEnterState();
     }
 
     public void UpdateState( PlayerInputs input )
     {
+        if ( changedState )
+        {
+            CurrentState.OnExitState();
+
+            PreviousState = CurrentState;
+            CurrentState = NextState;
+
+            CurrentState.OnEnterState();
+
+            changedState = false;
+        }
+
         CurrentState.OnUpdateState( input );
     }
 
     public void ChangeState( MovementState targetState )
     {
-        CurrentState.OnExitState();
-
         switch ( targetState )
         {
             case MovementState.STOPPED:
                 {
-                    CurrentState = new StoppedState( MovementModel );
-
+                    NextState = new StoppedState( MovementModel, this );
+                    break;
+                }
+            case MovementState.ACCELERATING:
+                {
+                    NextState = new AccelState( MovementModel, this );
+                    break;
+                }
+            case MovementState.MOVING:
+                {
+                    NextState = new MovingState( MovementModel, this );
+                    break;
+                }
+            case MovementState.JUMPING:
+                {
+                    NextState = new JumpingState( MovementModel, this );
                     break;
                 }
         }
-
-        CurrentState.OnEnterState( Time.time );
     }
 }
 
