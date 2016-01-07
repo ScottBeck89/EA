@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-public class JumpingState : IMovementState
+public class FallForgivenessState : IMovementState
 {
     private MovementState state = MovementState.JUMPING;
 
@@ -12,9 +12,9 @@ public class JumpingState : IMovementState
 
     private MovementStateManager manager;
 
-    private float jumpStartTime = 0f;
+    private float fallDeltaTime = 0f;
 
-    private float jumpDeltaTime = 0f;
+    private float fallLeniency = .2f;
 
     public MovementState State
     {
@@ -24,7 +24,7 @@ public class JumpingState : IMovementState
         }
     }
 
-    public JumpingState( MovementModel model, MovementStateManager manager )
+    public FallForgivenessState( MovementModel model, MovementStateManager manager )
     {
         this.model = model;
         this.manager = manager;
@@ -33,18 +33,21 @@ public class JumpingState : IMovementState
 
     public void OnEnterState()
     {
-        jumpStartTime = Time.time;
-        jumpDeltaTime = 0f;
-        model.Jump();
+        fallLeniency = Time.time;
+        fallDeltaTime = 0f;
     }
 
     public void OnUpdateState(PlayerInputs input)
     {
-        jumpDeltaTime += Time.fixedDeltaTime;
+        fallDeltaTime += Time.fixedDeltaTime;
 
-        if ( jumpDeltaTime > model.JumpLeniency || Mathf.Abs( input.verticalInput ) <= model.InputThreshold )
+        if ( fallDeltaTime > model.FallLeniency || Mathf.Abs( input.verticalInput ) <= model.InputThreshold )
         {
             manager.ChangeState( MovementState.FALLING );
+        }
+        else if ( input.verticalInput > model.InputThreshold && !model.Jumped )
+        {
+            manager.ChangeState( MovementState.JUMPING );
         }
 
         if ( input.horizontalInput > model.InputThreshold )

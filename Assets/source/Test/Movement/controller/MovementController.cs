@@ -11,6 +11,8 @@ public class MovementController : MonoBehaviour
 
     public GameObject jumpEffect;
 
+    public GameObject temp;
+
     private Vector3 StartingPosition;
 
     private float terminalVelocity;
@@ -112,11 +114,11 @@ public class MovementController : MonoBehaviour
         {
             case MovementState.STOPPED:
                 {
-                    if ( horizontalInput > movementModel.RunningThreshold )
+                    if ( horizontalInput > movementModel.InputThreshold )
                     {
                         movementModel.State = MovementState.ACCELERATING;
                     }
-                    else if ( -horizontalInput > movementModel.RunningThreshold )
+                    else if ( -horizontalInput > movementModel.InputThreshold )
                     {
                         movementModel.State = MovementState.ACCELERATING;
                     }
@@ -125,7 +127,7 @@ public class MovementController : MonoBehaviour
                         movementModel.StopMovement();
                     }
 
-                    if ( verticalInput > 0 && !jumpPressed )
+                    if ( verticalInput > movementModel.InputThreshold && !jumpPressed )
                     {
                         startJumpTime = Time.time;
                         jumpDeltaTime = 0f;
@@ -141,11 +143,11 @@ public class MovementController : MonoBehaviour
                 }
             case MovementState.ACCELERATING:
                 {
-                    if ( horizontalInput > 0  )
+                    if ( horizontalInput > movementModel.InputThreshold )
                     {
                         movementModel.ApplyHorizontalForce( 1 );
                     }
-                    else if ( -horizontalInput > 0 )
+                    else if ( -horizontalInput > movementModel.InputThreshold )
                     {
                         movementModel.ApplyHorizontalForce( -1 );
                     }
@@ -154,7 +156,7 @@ public class MovementController : MonoBehaviour
                         movementModel.State = MovementState.STOPPED;
                     }
 
-                    if ( verticalInput > 0 && !jumpPressed )
+                    if ( verticalInput > movementModel.InputThreshold && !jumpPressed )
                     {
                         startJumpTime = Time.time;
                         jumpDeltaTime = 0f;
@@ -170,11 +172,11 @@ public class MovementController : MonoBehaviour
                 }
             case MovementState.MOVING:
                 {
-                    if ( horizontalInput > movementModel.RunningThreshold )
+                    if ( horizontalInput > movementModel.InputThreshold )
                     {
                         movementModel.MoveHorizontally( 1 );
                     }
-                    else if ( -horizontalInput > movementModel.RunningThreshold )
+                    else if ( -horizontalInput > movementModel.InputThreshold )
                     {
                         movementModel.MoveHorizontally( -1 );
                     }
@@ -183,7 +185,7 @@ public class MovementController : MonoBehaviour
                         movementModel.State = MovementState.STOPPED;
                     }
 
-                    if ( verticalInput > 0 && !jumpPressed )
+                    if ( verticalInput > movementModel.InputThreshold && !jumpPressed )
                     {
                         startJumpTime = Time.time;
                         jumpDeltaTime = 0f;
@@ -204,11 +206,11 @@ public class MovementController : MonoBehaviour
                         movementModel.State = MovementState.JUMPED;
                     }
 
-                    if ( horizontalInput > 0  )
+                    if ( horizontalInput > movementModel.InputThreshold )
                     {
                         movementModel.ApplyHorizontalForce( 1 );
                     }
-                    else if ( -horizontalInput > 0 )
+                    else if ( -horizontalInput > movementModel.InputThreshold )
                     {
                         movementModel.ApplyHorizontalForce( -1 );
                     }
@@ -217,11 +219,11 @@ public class MovementController : MonoBehaviour
                 }
             case MovementState.JUMPED:
                 {
-                    if ( horizontalInput > 0 )
+                    if ( horizontalInput > movementModel.InputThreshold )
                     {
                         movementModel.ApplyHorizontalForce( 1 );
                     }
-                    else if ( -horizontalInput > 0 )
+                    else if ( -horizontalInput > movementModel.InputThreshold )
                     {
                         movementModel.ApplyHorizontalForce( -1 );
                     }
@@ -234,7 +236,7 @@ public class MovementController : MonoBehaviour
                     {
                         movementModel.State = MovementState.FALLING;
                     }
-                    else if ( verticalInput > 0 && !jumpPressed )
+                    else if ( verticalInput > movementModel.InputThreshold && !jumpPressed )
                     {
                         movementModel.State = MovementState.JUMPING;
 
@@ -243,11 +245,11 @@ public class MovementController : MonoBehaviour
                         jumpPressed = true;
                     }
 
-                    if ( horizontalInput > movementModel.RunningThreshold )
+                    if ( horizontalInput > movementModel.InputThreshold )
                     {
                         movementModel.MoveHorizontally( 1 );
                     }
-                    else if ( -horizontalInput > movementModel.RunningThreshold )
+                    else if ( -horizontalInput > movementModel.InputThreshold )
                     {
                         movementModel.MoveHorizontally( -1 );
                     }
@@ -255,16 +257,16 @@ public class MovementController : MonoBehaviour
                 }
             case MovementState.FALLING:
                 {
-                    if ( horizontalInput > 0 )
+                    if ( horizontalInput > movementModel.InputThreshold )
                     {
                         movementModel.ApplyHorizontalForce( 1 );
                     }
-                    else if ( -horizontalInput > 0 )
+                    else if ( -horizontalInput > movementModel.InputThreshold )
                     {
                         movementModel.ApplyHorizontalForce( -1 );
                     }
 
-                    if ( verticalInput > 0 && !jumpPressed )
+                    if ( verticalInput > movementModel.InputThreshold && !jumpPressed )
                     {
                         startJumpTime = Time.time;
                         jumpDeltaTime = 0f;
@@ -287,17 +289,17 @@ public class MovementController : MonoBehaviour
                         break;
                     }
 
-                    if ( horizontalInput > 0f && wallHugDirection > 0f )
+                    if ( horizontalInput > movementModel.InputThreshold && wallHugDirection > 0f )
                     {
                         //move off the wall
                         movementModel.State = MovementState.FALL_FORGIVENESS;
                     }
-                    else if ( horizontalInput < 0f && wallHugDirection < 0f )
+                    else if ( horizontalInput < movementModel.InputThreshold && wallHugDirection < 0f )
                     {
                         //move off the wall
                         movementModel.State = MovementState.FALL_FORGIVENESS;
                     }
-                    else if ( Mathf.Abs( horizontalInput ) > 0f )
+                    else if ( Mathf.Abs( horizontalInput ) > movementModel.InputThreshold )
                     {
                         movementModel.WallHangFactor = 0.75f;
                     }
@@ -310,17 +312,17 @@ public class MovementController : MonoBehaviour
                 }
             case MovementState.HUGGING_WALL:
                 {
-                    if ( horizontalInput > 0f && wallHugDirection > 0f )
+                    if ( horizontalInput > movementModel.InputThreshold && wallHugDirection > 0f )
                     {
                         //move off the wall
                         movementModel.State = MovementState.FALL_FORGIVENESS;
                     }
-                    else if ( horizontalInput < 0f && wallHugDirection < 0f )
+                    else if ( horizontalInput < movementModel.InputThreshold && wallHugDirection < 0f )
                     {
                         //move off the wall
                         movementModel.State = MovementState.FALL_FORGIVENESS;
                     }
-                    else if ( Mathf.Abs( horizontalInput ) > 0f )
+                    else if ( Mathf.Abs( horizontalInput ) > movementModel.InputThreshold )
                     {
                         movementModel.WallHangFactor = 0.25f;
                     }
@@ -343,6 +345,12 @@ public class MovementController : MonoBehaviour
     {
         if ( collision.collider.tag == "floor" || editMode )
         {
+            foreach ( ContactPoint2D cp in collision.contacts )
+            {
+                GameObject go = GameObject.Instantiate( temp, cp.point, Quaternion.identity ) as GameObject;
+
+                Destroy( go, 5.0f );
+            }
             if ( collision.contacts[ 0 ].normal.y > 0.4f )
             {
                 currentFloor = collision.collider;

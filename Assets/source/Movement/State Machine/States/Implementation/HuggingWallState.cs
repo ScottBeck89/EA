@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UnityEngine;
 
-public class MovingState : IMovementState
+public class HuggingWallState : IMovementState
 {
     private MovementState state = MovementState.MOVING;
 
@@ -19,12 +20,11 @@ public class MovingState : IMovementState
         }
     }
 
-    public MovingState( MovementModel model, MovementStateManager manager )
+    public HuggingWallState( MovementModel model, MovementStateManager manager )
     {
         this.model = model;
         this.manager = manager;
     }
-
 
     public void OnEnterState()
     {
@@ -33,22 +33,21 @@ public class MovingState : IMovementState
 
     public void OnUpdateState(PlayerInputs input)
     {
-        if ( input.horizontalInput > model.InputThreshold )
+        if ( input.horizontalInput > model.InputThreshold && manager.WallHugDirection > 0f )
         {
-            model.MoveHorizontally( 1 );
+            model.ApplyHorizontalForce( 1 );
         }
-        else if ( input.horizontalInput < -model.InputThreshold )
+        else if ( input.horizontalInput < -model.InputThreshold && manager.WallHugDirection < 0f )
         {
-            model.MoveHorizontally( -1 );
+            model.ApplyHorizontalForce( -1 );
+        }
+        else if ( Mathf.Abs( input.horizontalInput ) > model.InputThreshold )
+        {
+            model.WallHangFactor = 0.25f;
         }
         else
         {
-            manager.ChangeState( MovementState.STOPPED );
-        }
-
-        if ( input.verticalInput > model.InputThreshold && !model.Jumped )
-        {
-            manager.ChangeState( MovementState.JUMPING );
+            model.WallHangFactor = 1f;
         }
     }
 

@@ -21,6 +21,8 @@ public enum MovementState
 [RequireComponent(typeof( Rigidbody2D ))]
 public class MovementModel : MonoBehaviour
 {
+    public MovementStateManager manager;
+
     private Rigidbody2D myRigidBody;
 
     private float absoluteMaxVelocity = 37.00f;
@@ -37,13 +39,15 @@ public class MovementModel : MonoBehaviour
 
     private float linearDrag = 1.00f;
 
-    private float jumpForce = 5.00f;
+    private float jumpForce = 100.00f;
 
     private float jumpMaxVelocity = 10.00f;
 
-    private float runningThreshold = 0.05f;
+    private float inputThreshold = 0.025f;
 
     private float jumpLeniency = 0.3f;
+
+    private float fallLeniency = 0.3f;
 
     private MovementState state = MovementState.STOPPED;
 
@@ -55,11 +59,9 @@ public class MovementModel : MonoBehaviour
 
     private Boolean jumped = false;
 
-    private float jumpStartTime = 0f;
-
-    private float jumpDeltaTime = 0f;
-
     private float wallHangFactor = 5f;
+
+    private Boolean parabolicJump = false;
 
 
     #region Properties
@@ -150,15 +152,15 @@ public class MovementModel : MonoBehaviour
         }
     }
 
-    public float RunningThreshold
+    public float InputThreshold
     {
         get
         {
-            return runningThreshold;
+            return inputThreshold;
         }
         set
         {
-            runningThreshold = value;
+            inputThreshold = value;
         }
     }
 
@@ -171,6 +173,18 @@ public class MovementModel : MonoBehaviour
         set
         {
             jumpLeniency = value;
+        }
+    }
+
+    public float FallLeniency
+    {
+        get
+        {
+            return fallLeniency;
+        }
+        set
+        {
+            fallLeniency = value;
         }
     }
 
@@ -228,6 +242,18 @@ public class MovementModel : MonoBehaviour
         }
     }
 
+    public Boolean ParabolicJump
+    {
+        get
+        {
+            return parabolicJump;
+        }
+        set
+        {
+            parabolicJump = value;
+        }
+    }
+
     #endregion
 
     #region Public Methods
@@ -280,24 +306,28 @@ public class MovementModel : MonoBehaviour
             horizontalAcceleration = PlayerPrefs.GetFloat( "HorizontalAcceleration" );
             gravityScale = PlayerPrefs.GetFloat( "GravityScale" );
             linearDrag = PlayerPrefs.GetFloat( "LinearDrag" );
+
+            Boolean.TryParse( PlayerPrefs.GetString( "ParabolicJump" ), out parabolicJump );
         }
     }
 
     private void FixedUpdate()
     {
-        jumpDeltaTime += Time.fixedDeltaTime;
-
         if ( state == MovementState.ACCELERATING )
         {
             myRigidBody.AddRelativeForce( deltaForces );
-            if ( Mathf.Abs( myRigidBody.velocity.x ) >= horizontalTerminalVelocity )
+            /*if ( Mathf.Abs( myRigidBody.velocity.x ) >= horizontalTerminalVelocity )
             {
                 State = MovementState.MOVING;
-            }
+            }*/
         } 
         else if ( state == MovementState.MOVING )
         {
             myRigidBody.velocity = new Vector2( horizontalTerminalVelocity * horizontalDirection, myRigidBody.velocity.y );
+        }
+        else if ( state == MovementState.FALL_FORGIVENESS )
+        {
+            myRigidBody.AddRelativeForce( deltaForces );
         }
         else if ( state == MovementState.STOPPED )
         {
@@ -306,7 +336,16 @@ public class MovementModel : MonoBehaviour
         }
         else if ( state == MovementState.JUMPING )
         {
-            myRigidBody.velocity = new Vector2( myRigidBody.velocity.x, jumpMaxVelocity );
+            if ( parabolicJump )
+            {
+                float y = Mathf.Clamp( myRigidBody.velocity.y, 0, terminalVelocity );
+                myRigidBody.velocity = new Vector2( myRigidBody.velocity.x, y );
+                myRigidBody.AddRelativeForce( new Vector2( 0, 100f ) );
+            }
+            else
+            {
+                myRigidBody.velocity = new Vector2( myRigidBody.velocity.x, jumpMaxVelocity );
+            }
             myRigidBody.AddRelativeForce( deltaForces );
         }
         else if ( state == MovementState.JUMPED || state == MovementState.FALLING )
@@ -316,7 +355,7 @@ public class MovementModel : MonoBehaviour
         }
         else if ( state == MovementState.HITTING_WALL )
         {
-            myRigidBody.velocity = new Vector2( 0, jumpMaxVelocity );
+            myRigidBody.velocity = new Vector2( 0, myRigidBody.velocity.y );
             myRigidBody.AddRelativeForce( deltaForces );
         }
         else if ( state == MovementState.HUGGING_WALL )

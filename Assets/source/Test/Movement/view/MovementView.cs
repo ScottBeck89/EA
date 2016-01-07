@@ -32,6 +32,10 @@ public class MovementView : MonoBehaviour
 
     public Slider GravityScaleSlider;
 
+    public Toggle ParabolicJumpToggle;
+
+    public GameObject saveButton;
+
     void Update()
     {
         horizontalVelocity.text = moveController.MovementModel.MyRigidbody.velocity.x.ToString();
@@ -104,6 +108,12 @@ public class MovementView : MonoBehaviour
 
             GravityScaleSlider.onValueChanged.AddListener( GravityScaleUpdate );
         }
+        if ( ParabolicJumpToggle != null )
+        {
+            ParabolicJumpToggle.isOn = moveController.movementModel.ParabolicJump;
+
+            ParabolicJumpToggle.onValueChanged.AddListener( ParabolicJumpUpdated );
+        }
     }
 
     public void ToggleModifiers()
@@ -114,8 +124,13 @@ public class MovementView : MonoBehaviour
         horizontalAccelerationSlider.gameObject.SetActive( !horizontalAccelerationSlider.gameObject.activeSelf );
         linearDragSlider.gameObject.SetActive( !linearDragSlider.gameObject.activeSelf );
         GravityScaleSlider.gameObject.SetActive( !GravityScaleSlider.gameObject.activeSelf );
+        ParabolicJumpToggle.gameObject.SetActive( !ParabolicJumpToggle.gameObject.activeSelf );
+        saveButton.gameObject.SetActive( !saveButton.gameObject.activeSelf );
+
         StartCoroutine( setValues() );
     }
+
+    #region Updaters
 
     public void AbsoluteMaxVelocityUpdated( float value )
     {
@@ -201,6 +216,19 @@ public class MovementView : MonoBehaviour
         moveController.MovementModel.GravityScale = value;
     }
 
+    public void ParabolicJumpUpdated( Boolean value )
+    {
+        if ( moveController == null )
+        {
+            print( "attach the move controller" );
+            return;
+        }
+
+        moveController.movementModel.ParabolicJump = value;
+    }
+
+    #endregion
+
     public void SaveValues()
     {
         PlayerPrefs.SetFloat( "AbsoluteMaxVelocity", moveController.MovementModel.AbsoluteMaxVelocity );
@@ -209,6 +237,8 @@ public class MovementView : MonoBehaviour
         PlayerPrefs.SetFloat( "HorizontalAcceleration", moveController.MovementModel.HorizontalAcceleration );
         PlayerPrefs.SetFloat( "LinearDrag", moveController.MovementModel.LinearDrag );
         PlayerPrefs.SetFloat( "GravityScale", moveController.MovementModel.GravityScale );
+
+        PlayerPrefs.SetString( "ParabolicJump", moveController.movementModel.ParabolicJump.ToString() );
 
         PlayerPrefs.SetString( "UseCustomSettings", "true" );
     }

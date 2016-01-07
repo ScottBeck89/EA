@@ -33,7 +33,7 @@ public class StoppedState : IMovementState
 
     public void OnUpdateState(PlayerInputs input)
     {
-        if ( input.horizontalInput > model.RunningThreshold || input.horizontalInput < -model.RunningThreshold )
+        if ( input.horizontalInput > model.InputThreshold || input.horizontalInput < -model.InputThreshold )
         {
             manager.ChangeState( MovementState.ACCELERATING );
             return;
@@ -43,7 +43,7 @@ public class StoppedState : IMovementState
             model.StopMovement();
         }
 
-        if ( input.verticalInput > 0 && !model.Jumped )
+        if ( input.verticalInput > model.InputThreshold && !model.Jumped )
         {
             manager.ChangeState( MovementState.JUMPING );
         }
