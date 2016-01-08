@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
 using UnityEngine;
 
 public class MovementStateManager : MonoBehaviour
@@ -30,6 +30,10 @@ public class MovementStateManager : MonoBehaviour
     private Vector3 StartingPosition;
 
     private float wallHugDirection = 0f;
+
+    private Vector2 impactVelocity = Vector2.zero;
+
+    private float impactAngle = 0f;
 
     #region Properties
 
@@ -61,6 +65,22 @@ public class MovementStateManager : MonoBehaviour
         }
     }
 
+    public Vector2 ImpactVelocity
+    {
+        get
+        {
+            return impactVelocity;
+        }
+    }
+
+    public float ImpactAngle
+    {
+        get
+        {
+            return impactAngle;
+        }
+    }
+
     #endregion
 
     private void Start()
@@ -77,6 +97,8 @@ public class MovementStateManager : MonoBehaviour
 
         PreviousState = CurrentState;
         CurrentState.OnEnterState();
+
+        StartingPosition = transform.position;
     }
 
     public void editModeToggle()
@@ -144,7 +166,12 @@ public class MovementStateManager : MonoBehaviour
                 }
             case MovementState.HUGGING_WALL:
                 {
-                    NextState = new FallingState( MovementModel, this );
+                    NextState = new HuggingWallState( MovementModel, this );
+                    break;
+                }
+            case MovementState.WALL_LAUNCH:
+                {
+                    NextState = new WallLaunchState( MovementModel, this );
                     break;
                 }
         }
@@ -152,23 +179,83 @@ public class MovementStateManager : MonoBehaviour
         changedState = true;
     }
 
+    public void ChangeStateImmediate( MovementState targetState )
+    {
+        switch ( targetState )
+        {
+            case MovementState.STOPPED:
+                {
+                    NextState = new StoppedState( MovementModel, this );
+                    break;
+                }
+            case MovementState.ACCELERATING:
+                {
+                    NextState = new AccelState( MovementModel, this );
+                    break;
+                }
+            case MovementState.MOVING:
+                {
+                    NextState = new MovingState( MovementModel, this );
+                    break;
+                }
+            case MovementState.JUMPING:
+                {
+                    NextState = new JumpingState( MovementModel, this );
+                    break;
+                }
+            case MovementState.FALL_FORGIVENESS:
+                {
+                    NextState = new FallForgivenessState( MovementModel, this );
+                    break;
+                }
+            case MovementState.FALLING:
+                {
+                    NextState = new FallingState( MovementModel, this );
+                    break;
+                }
+            case MovementState.HUGGING_WALL:
+                {
+                    NextState = new HuggingWallState( MovementModel, this );
+                    break;
+                }
+            case MovementState.WALL_LAUNCH:
+                {
+                    NextState = new WallLaunchState( MovementModel, this );
+                    break;
+                }
+        }
+
+        CurrentState.OnExitState();
+
+        PreviousState = CurrentState;
+        CurrentState = NextState;
+        MovementModel.State = CurrentState.State;
+
+        CurrentState.OnEnterState();
+    }
+
     void OnCollisionEnter2D( Collision2D collision )
     {
         if ( collision.collider.tag == "floor" || editMode )
         {
+            MovementModel.Landed();
+
             if ( collision.contacts[ 0 ].normal.y > 0.4f )
             {
                 currentFloor = collision.collider;
-                ChangeState( MovementState.STOPPED );
+                ChangeStateImmediate( MovementState.STOPPED );
             }
             else if ( collision.contacts[ 0 ].normal.y < -0.4f )
             {
-                currentFloor = null;
-                ChangeState( MovementState.JUMPED );
+                ChangeStateImmediate( MovementState.FALLING );
             }
-            else if ( Mathf.Abs( collision.contacts[ 0 ].normal.x ) > .6f && currentFloor == null )
+            else if ( Mathf.Abs( collision.contacts[ 0 ].normal.x ) > 0.4f && ( currentFloor == null || MovementModel.State == MovementState.FALLING ) )
             {
-                ChangeState( MovementState.HUGGING_WALL );
+                impactAngle = SMath.VectorToDegree( collision.relativeVelocity );
+                impactVelocity = collision.relativeVelocity;
+
+                wallHugDirection = collision.contacts[ 0 ].normal.x;
+                ChangeStateImmediate( MovementState.HUGGING_WALL );
             }
         }
         else if ( collision.collider.tag == "Environment" )
@@ -177,25 +264,43 @@ public class MovementStateManager : MonoBehaviour
         }
     }
 
+    void OnCollisionStay2D( Collision2D collision )
+    {
+        if ( collision.collider.tag == "floor" || editMode )
+        {
+            if ( MovementModel.State == MovementState.STOPPED && Mathf.Abs( collision.contacts[ 0 ].normal.x ) > 0.4f && currentFloor == null )
+            {
+                ChangeState( MovementState.FALL_FORGIVENESS );
+            }
+            else if ( currentFloor == null && Mathf.Abs( collision.contacts[ 0 ].normal.x ) > 0.4f && MovementModel.State == MovementState.FALLING ) 
+            {
+                wallHugDirection = collision.contacts[ 0 ].normal.x;
+                ChangeState( MovementState.HUGGING_WALL );
+            }
+        }
+    }
+
     void OnCollisionExit2D( Collision2D collision )
     {
         if ( collision.collider.tag == "floor" || editMode )
         {
-            if ( ( ( MovementModel.State == MovementState.MOVING || MovementModel.State == MovementState.STOPPED || MovementModel.State == MovementState.ACCELERATING ) 
-                && collision.contacts[ 0 ].normal.y > 0.4f ) ||
-                MovementModel.State == MovementState.HITTING_WALL || MovementModel.State == MovementState.HUGGING_WALL )
+            if ( ( MovementModel.State != MovementState.JUMPING && collision.contacts[ 0 ].normal.y > 0.4f ) ||
+                ( MovementModel.State == MovementState.HITTING_WALL || MovementModel.State == MovementState.HUGGING_WALL && currentFloor == null ) )
             {
                 currentFloor = null;
+                wallHugDirection = 0f;
 
                 ChangeState( MovementState.FALL_FORGIVENESS );
             }
             else if ( MovementModel.State == MovementState.JUMPING && collision.contacts[ 0 ].normal.y > 0.4f )
             {
                 currentFloor = null;
+                wallHugDirection = 0f;
 
-                GameObject jumpGO = GameObject.Instantiate( jumpEffect, new Vector2( transform.position.x, transform.position.y - ( transform.localScale.y / 2 ) ), Quaternion.identity ) as GameObject;
-
-                Destroy( jumpGO, 2.0f );
+                if ( MovementModel.ParabolicJump )
+                {
+                    ChangeState( MovementState.FALLING );
+                }
             }
         }
     }

@@ -111,7 +111,11 @@ namespace LOS.Event {
                                 {
                                     triggerToAdd = hitGo.GetComponentInParent<LOSEventTrigger>();
                                 }
-                                triggeredTriggers.Add( triggerToAdd );
+
+                                if ( triggerToAdd != null )
+                                {
+                                    triggeredTriggers.Add( triggerToAdd );
+                                }
                             }
                         }
                     }
@@ -132,7 +136,11 @@ namespace LOS.Event {
                                 {
                                     triggerToAdd = hitGo.GetComponentInParent<LOSEventTrigger>();
                                 }
-                                triggeredTriggers.Add( triggerToAdd );
+
+                                if ( triggerToAdd != null )
+                                {
+                                    triggeredTriggers.Add( triggerToAdd );
+                                }
                             }
                         }
                     }

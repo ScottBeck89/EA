@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UnityEngine;
 
 public class MovingState : IMovementState
 {
@@ -33,6 +34,11 @@ public class MovingState : IMovementState
 
     public void OnUpdateState(PlayerInputs input)
     {
+        if ( input.verticalInput < model.InputThreshold && !model.JumpingEnabled )
+        {
+            model.EnableJumping();
+        }
+
         if ( input.horizontalInput > model.InputThreshold )
         {
             model.MoveHorizontally( 1 );
@@ -43,10 +49,11 @@ public class MovingState : IMovementState
         }
         else
         {
+            model.StopHorizontalMovement();
             manager.ChangeState( MovementState.STOPPED );
         }
 
-        if ( input.verticalInput > model.InputThreshold && !model.Jumped )
+        if ( input.verticalInput > model.InputThreshold && model.JumpingEnabled )
         {
             manager.ChangeState( MovementState.JUMPING );
         }

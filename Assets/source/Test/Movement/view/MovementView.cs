@@ -8,7 +8,9 @@ using UnityEngine.UI;
 
 public class MovementView : MonoBehaviour
 {
-    public MovementController moveController;
+    public MovementModel model;
+
+    public GameObject GroupContainer;
 
     public Text horizontalVelocity;
 
@@ -32,17 +34,25 @@ public class MovementView : MonoBehaviour
 
     public Slider GravityScaleSlider;
 
+    public Slider JumpForceSlider;
+
+    public Slider HorizontalJumpForceSlider;
+
+    public Slider JumpVelocitySlider;
+
+    public Slider HorizontalJumpVelocitySlider;
+
     public Toggle ParabolicJumpToggle;
 
     public GameObject saveButton;
 
     void Update()
     {
-        horizontalVelocity.text = moveController.MovementModel.MyRigidbody.velocity.x.ToString();
-        verticalVelocity.text = moveController.MovementModel.MyRigidbody.velocity.y.ToString();
-        absoluteVelocity.text = moveController.MovementModel.MyRigidbody.velocity.magnitude.ToString();
-        movementState.text = moveController.movementModel.State.ToString();
-        previousMovementState.text = moveController.movementModel.PreviousState.ToString();
+        horizontalVelocity.text = model.MyRigidbody.velocity.x.ToString();
+        verticalVelocity.text = model.MyRigidbody.velocity.y.ToString();
+        absoluteVelocity.text = model.MyRigidbody.velocity.magnitude.ToString();
+        movementState.text = model.State.ToString();
+        previousMovementState.text = model.PreviousState.ToString();
     }
 
 
@@ -59,7 +69,7 @@ public class MovementView : MonoBehaviour
         {
             absoluteMaxVelocitySlider.minValue = 10f;
             absoluteMaxVelocitySlider.maxValue = 100f;
-            absoluteMaxVelocitySlider.value = moveController.movementModel.AbsoluteMaxVelocity;
+            absoluteMaxVelocitySlider.value = model.AbsoluteMaxVelocity;
 
             absoluteMaxVelocitySlider.onValueChanged.AddListener( AbsoluteMaxVelocityUpdated );
         }
@@ -68,7 +78,7 @@ public class MovementView : MonoBehaviour
         {
             horizontalTerminalVelocitySlider.minValue = 10f;
             horizontalTerminalVelocitySlider.maxValue = 40f;
-            horizontalTerminalVelocitySlider.value = moveController.movementModel.HorizontalTerminalVelocity;
+            horizontalTerminalVelocitySlider.value = model.HorizontalTerminalVelocity;
 
             horizontalTerminalVelocitySlider.onValueChanged.AddListener( HorizontalTerminalVelocityUpdated );
         }
@@ -77,7 +87,7 @@ public class MovementView : MonoBehaviour
         {
             terminalVelocitySlider.minValue = 10f;
             terminalVelocitySlider.maxValue = 40f;
-            terminalVelocitySlider.value = moveController.movementModel.TerminalVelocity;
+            terminalVelocitySlider.value = model.TerminalVelocity;
 
             terminalVelocitySlider.onValueChanged.AddListener( TerminalVelocityUpdated );
         }
@@ -86,7 +96,7 @@ public class MovementView : MonoBehaviour
         {
             horizontalAccelerationSlider.minValue = 10f;
             horizontalAccelerationSlider.maxValue = 100f;
-            horizontalAccelerationSlider.value = moveController.movementModel.HorizontalAcceleration;
+            horizontalAccelerationSlider.value = model.HorizontalAcceleration;
 
             horizontalAccelerationSlider.onValueChanged.AddListener( HorizontalAccelerationUpdated );
         }
@@ -95,7 +105,7 @@ public class MovementView : MonoBehaviour
         {
             linearDragSlider.minValue = 0f;
             linearDragSlider.maxValue = 10f;
-            linearDragSlider.value = moveController.movementModel.LinearDrag;
+            linearDragSlider.value = model.LinearDrag;
 
             linearDragSlider.onValueChanged.AddListener( LinearDragUpdate );
         }
@@ -104,13 +114,50 @@ public class MovementView : MonoBehaviour
         {
             GravityScaleSlider.minValue = 0f;
             GravityScaleSlider.maxValue = 50f;
-            GravityScaleSlider.value = moveController.movementModel.GravityScale;
+            GravityScaleSlider.value = model.GravityScale;
 
             GravityScaleSlider.onValueChanged.AddListener( GravityScaleUpdate );
         }
+
+        if ( JumpForceSlider != null )
+        {
+            JumpForceSlider.minValue = 0f;
+            JumpForceSlider.maxValue = 100f;
+            JumpForceSlider.value = model.JumpForce;
+
+            JumpForceSlider.onValueChanged.AddListener( JumpForceUpdate );
+        }
+
+        if ( HorizontalJumpForceSlider != null )
+        {
+            HorizontalJumpForceSlider.minValue = 0f;
+            HorizontalJumpForceSlider.maxValue = 100f;
+            HorizontalJumpForceSlider.value = model.HorizontalJumpForce;
+
+            HorizontalJumpForceSlider.onValueChanged.AddListener( HorizontalJumpForceUpdate );
+        }
+
+        if ( JumpVelocitySlider != null )
+        {
+            JumpVelocitySlider.minValue = 0f;
+            JumpVelocitySlider.maxValue = 50f;
+            JumpVelocitySlider.value = model.JumpMaxVelocity;
+
+            JumpVelocitySlider.onValueChanged.AddListener( JumpVelocityUpdate );
+        }
+
+        if ( HorizontalJumpVelocitySlider != null )
+        {
+            HorizontalJumpVelocitySlider.minValue = 0f;
+            HorizontalJumpVelocitySlider.maxValue = 50f;
+            HorizontalJumpVelocitySlider.value = model.HorizontalJumpVelocity;
+
+            HorizontalJumpVelocitySlider.onValueChanged.AddListener( HorizontalJumpVelocityUpdate );
+        }
+
         if ( ParabolicJumpToggle != null )
         {
-            ParabolicJumpToggle.isOn = moveController.movementModel.ParabolicJump;
+            ParabolicJumpToggle.isOn = model.ParabolicJump;
 
             ParabolicJumpToggle.onValueChanged.AddListener( ParabolicJumpUpdated );
         }
@@ -118,14 +165,7 @@ public class MovementView : MonoBehaviour
 
     public void ToggleModifiers()
     {
-        absoluteMaxVelocitySlider.gameObject.SetActive( !absoluteMaxVelocitySlider.gameObject.activeSelf );
-        terminalVelocitySlider.gameObject.SetActive( !terminalVelocitySlider.gameObject.activeSelf );
-        horizontalTerminalVelocitySlider.gameObject.SetActive( !horizontalTerminalVelocitySlider.gameObject.activeSelf );
-        horizontalAccelerationSlider.gameObject.SetActive( !horizontalAccelerationSlider.gameObject.activeSelf );
-        linearDragSlider.gameObject.SetActive( !linearDragSlider.gameObject.activeSelf );
-        GravityScaleSlider.gameObject.SetActive( !GravityScaleSlider.gameObject.activeSelf );
-        ParabolicJumpToggle.gameObject.SetActive( !ParabolicJumpToggle.gameObject.activeSelf );
-        saveButton.gameObject.SetActive( !saveButton.gameObject.activeSelf );
+        GroupContainer.SetActive( !GroupContainer.activeSelf );
 
         StartCoroutine( setValues() );
     }
@@ -137,13 +177,13 @@ public class MovementView : MonoBehaviour
         value = Round( value, 2 );
         absoluteMaxVelocitySlider.value = value;
 
-        if ( moveController == null )
+        if ( model == null )
         {
-            print( "attach the move controller" );
+            print( "attach the move model" );
             return;
         }
 
-        moveController.MovementModel.AbsoluteMaxVelocity = value;
+        model.AbsoluteMaxVelocity = value;
     }
 
     public void TerminalVelocityUpdated( float value )
@@ -151,13 +191,13 @@ public class MovementView : MonoBehaviour
         value = Round( value, 2 );
         terminalVelocitySlider.value = value;
 
-        if ( moveController == null )
+        if ( model == null )
         {
-            print( "attach the move controller" );
+            print( "attach the move model" );
             return;
         }
 
-        moveController.MovementModel.TerminalVelocity = value;
+        model.TerminalVelocity = value;
     }
 
     public void HorizontalTerminalVelocityUpdated( float value )
@@ -165,13 +205,13 @@ public class MovementView : MonoBehaviour
         value = Round( value, 2 );
         horizontalTerminalVelocitySlider.value = value;
 
-        if ( moveController == null )
+        if ( model == null )
         {
-            print( "attach the move controller" );
+            print( "attach the move model" );
             return;
         }
 
-        moveController.MovementModel.HorizontalTerminalVelocity = value;
+        model.HorizontalTerminalVelocity = value;
     }
 
     public void HorizontalAccelerationUpdated( float value )
@@ -179,13 +219,13 @@ public class MovementView : MonoBehaviour
         value = Round( value, 2 );
         horizontalAccelerationSlider.value = value;
 
-        if ( moveController == null )
+        if ( model == null )
         {
-            print( "attach the move controller" );
+            print( "attach the move model" );
             return;
         }
 
-        moveController.MovementModel.HorizontalAcceleration = value;
+        model.HorizontalAcceleration = value;
     }
 
     public void LinearDragUpdate(float value)
@@ -193,13 +233,13 @@ public class MovementView : MonoBehaviour
         value = Round( value, 2 );
         linearDragSlider.value = value;
 
-        if ( moveController == null )
+        if ( model == null )
         {
-            print( "attach the move controller" );
+            print( "attach the move model" );
             return;
         }
 
-        moveController.MovementModel.LinearDrag = value;
+        model.LinearDrag = value;
     }
 
     public void GravityScaleUpdate( float value )
@@ -207,40 +247,105 @@ public class MovementView : MonoBehaviour
         value = Round( value, 2 );
         GravityScaleSlider.value = value;
 
-        if ( moveController == null )
+        if ( model == null )
         {
-            print( "attach the move controller" );
+            print( "attach the move model" );
             return;
         }
 
-        moveController.MovementModel.GravityScale = value;
+        model.GravityScale = value;
+    }
+
+    public void JumpForceUpdate( float value )
+    {
+        value = Round( value, 2 );
+        JumpForceSlider.value = value;
+
+        if ( model == null )
+        {
+            print( "attach the move model" );
+            return;
+        }
+
+        model.JumpForce = value;
+    }
+
+    public void HorizontalJumpForceUpdate( float value )
+    {
+        value = Round( value, 2 );
+        HorizontalJumpForceSlider.value = value;
+
+        if ( model == null )
+        {
+            print( "attach the move model" );
+            return;
+        }
+
+        model.HorizontalJumpForce = value;
+    }
+
+    public void JumpVelocityUpdate( float value )
+    {
+        value = Round( value, 2 );
+        JumpVelocitySlider.value = value;
+
+        if ( model == null )
+        {
+            print( "attach the move model" );
+            return;
+        }
+
+        model.JumpMaxVelocity = value;
+    }
+
+    public void HorizontalJumpVelocityUpdate( float value )
+    {
+        value = Round( value, 2 );
+        HorizontalJumpVelocitySlider.value = value;
+
+        if ( model == null )
+        {
+            print( "attach the move model" );
+            return;
+        }
+
+        model.HorizontalJumpVelocity = value;
     }
 
     public void ParabolicJumpUpdated( Boolean value )
     {
-        if ( moveController == null )
+        if ( model == null )
         {
-            print( "attach the move controller" );
+            print( "attach the move model" );
             return;
         }
 
-        moveController.movementModel.ParabolicJump = value;
+        model.ParabolicJump = value;
     }
 
     #endregion
 
     public void SaveValues()
     {
-        PlayerPrefs.SetFloat( "AbsoluteMaxVelocity", moveController.MovementModel.AbsoluteMaxVelocity );
-        PlayerPrefs.SetFloat( "TerminalVelocity", moveController.MovementModel.TerminalVelocity );
-        PlayerPrefs.SetFloat( "HorizontalTerminalVelocity", moveController.MovementModel.HorizontalTerminalVelocity );
-        PlayerPrefs.SetFloat( "HorizontalAcceleration", moveController.MovementModel.HorizontalAcceleration );
-        PlayerPrefs.SetFloat( "LinearDrag", moveController.MovementModel.LinearDrag );
-        PlayerPrefs.SetFloat( "GravityScale", moveController.MovementModel.GravityScale );
+        PlayerPrefs.SetFloat( "AbsoluteMaxVelocity", model.AbsoluteMaxVelocity );
+        PlayerPrefs.SetFloat( "TerminalVelocity", model.TerminalVelocity );
+        PlayerPrefs.SetFloat( "HorizontalTerminalVelocity", model.HorizontalTerminalVelocity );
+        PlayerPrefs.SetFloat( "HorizontalAcceleration", model.HorizontalAcceleration );
+        PlayerPrefs.SetFloat( "LinearDrag", model.LinearDrag );
+        PlayerPrefs.SetFloat( "GravityScale", model.GravityScale );
+        PlayerPrefs.SetFloat( "JumpForce", model.JumpForce );
+        PlayerPrefs.SetFloat( "HorizontalJumpForce", model.HorizontalJumpForce );
+        PlayerPrefs.SetFloat( "JumpMaxVelocity", model.JumpMaxVelocity );
+        PlayerPrefs.SetFloat( "HorizontalJumpVelocity", model.HorizontalJumpVelocity );
 
-        PlayerPrefs.SetString( "ParabolicJump", moveController.movementModel.ParabolicJump.ToString() );
+        PlayerPrefs.SetString( "ParabolicJump", model.ParabolicJump.ToString() );
 
         PlayerPrefs.SetString( "UseCustomSettings", "true" );
+    }
+
+    public void ResetValues()
+    {
+        PlayerPrefs.SetString( "UseCustomSettings", "false" );
     }
 
     public static float Round( float value, int digits )

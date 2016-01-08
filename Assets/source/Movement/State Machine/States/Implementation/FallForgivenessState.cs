@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class FallForgivenessState : IMovementState
 {
-    private MovementState state = MovementState.JUMPING;
+    private MovementState state = MovementState.FALL_FORGIVENESS;
 
     private MovementModel model;
 
@@ -41,11 +41,11 @@ public class FallForgivenessState : IMovementState
     {
         fallDeltaTime += Time.fixedDeltaTime;
 
-        if ( fallDeltaTime > model.FallLeniency || Mathf.Abs( input.verticalInput ) <= model.InputThreshold )
+        if ( fallDeltaTime > model.FallLeniency )
         {
             manager.ChangeState( MovementState.FALLING );
         }
-        else if ( input.verticalInput > model.InputThreshold && !model.Jumped )
+        else if ( input.verticalInput > model.InputThreshold && model.JumpingEnabled )
         {
             manager.ChangeState( MovementState.JUMPING );
         }
@@ -54,7 +54,7 @@ public class FallForgivenessState : IMovementState
         {
             model.ApplyHorizontalForce( 1 );
         }
-        else if ( input.horizontalInput < model.InputThreshold )
+        else if ( input.horizontalInput < -model.InputThreshold )
         {
             model.ApplyHorizontalForce( -1 );
         }

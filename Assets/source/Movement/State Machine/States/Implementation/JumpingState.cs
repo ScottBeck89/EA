@@ -35,7 +35,14 @@ public class JumpingState : IMovementState
     {
         jumpStartTime = Time.time;
         jumpDeltaTime = 0f;
-        model.Jump();
+        model.DisableJumping();
+
+        GameObject jumpGO = GameObject.Instantiate( manager.jumpEffect, 
+            new Vector2( manager.transform.position.x, manager.transform.position.y - ( manager.transform.localScale.y / 2 ) ), Quaternion.identity ) as GameObject;
+
+        jumpGO.transform.eulerAngles = new Vector3( 0, 0, -1 * Mathf.Round( manager.WallHugDirection ) * 45 );
+
+        GameObject.Destroy( jumpGO, 2.0f );
     }
 
     public void OnUpdateState(PlayerInputs input)
@@ -51,7 +58,7 @@ public class JumpingState : IMovementState
         {
             model.ApplyHorizontalForce( 1 );
         }
-        else if ( input.horizontalInput < model.InputThreshold )
+        else if ( input.horizontalInput < -model.InputThreshold )
         {
             model.ApplyHorizontalForce( -1 );
         }
@@ -59,6 +66,5 @@ public class JumpingState : IMovementState
 
     public void OnExitState()
     {
-
     }
 }

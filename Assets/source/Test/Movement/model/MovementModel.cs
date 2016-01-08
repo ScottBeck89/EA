@@ -15,6 +15,7 @@ public enum MovementState
     JUMPING,
     JUMPED,
     HITTING_WALL,
+    WALL_LAUNCH,
     HUGGING_WALL,
 }
 [Serializable]
@@ -25,7 +26,7 @@ public class MovementModel : MonoBehaviour
 
     private Rigidbody2D myRigidBody;
 
-    private float absoluteMaxVelocity = 37.00f;
+    private float absoluteMaxVelocity = 42.00f;
 
     private float terminalVelocity = 25f;
 
@@ -33,13 +34,17 @@ public class MovementModel : MonoBehaviour
 
     private float horizontalTerminalVelocity = 20.00f;
 
+    private float horizontalJumpVelocity = 20.00f;
+
     private float horizontalAcceleration = 100.00f;
 
     private float gravityScale = 5.00f;
 
     private float linearDrag = 1.00f;
 
-    private float jumpForce = 100.00f;
+    private float jumpForce = 25.00f;
+
+    private float horizontalJumpForce = 22.00f;
 
     private float jumpMaxVelocity = 10.00f;
 
@@ -47,7 +52,7 @@ public class MovementModel : MonoBehaviour
 
     private float jumpLeniency = 0.3f;
 
-    private float fallLeniency = 0.3f;
+    private float fallLeniency = 0.1f;//possibly make it distance instead?
 
     private MovementState state = MovementState.STOPPED;
 
@@ -57,12 +62,19 @@ public class MovementModel : MonoBehaviour
 
     private int horizontalDirection = 1;
 
-    private Boolean jumped = false;
+    private Boolean jumpingEnabled = true;
 
     private float wallHangFactor = 5f;
 
     private Boolean parabolicJump = false;
 
+    private Boolean transferingVelocity = false;
+
+    private Vector3 velocityToTransfer = Vector3.zero;
+
+    private float angleOfTransfer = 0f;
+
+    private Boolean justWallLaunched = false;
 
     #region Properties
 
@@ -99,6 +111,18 @@ public class MovementModel : MonoBehaviour
         set
         {
             horizontalTerminalVelocity = value;
+        }
+    }
+
+    public float HorizontalJumpVelocity
+    {
+        get
+        {
+            return horizontalJumpVelocity;
+        }
+        set
+        {
+            horizontalJumpVelocity = value;
         }
     }
 
@@ -149,6 +173,30 @@ public class MovementModel : MonoBehaviour
         set
         {
             jumpForce = value;
+        }
+    }
+
+    public float HorizontalJumpForce
+    {
+        get
+        {
+            return horizontalJumpForce;
+        }
+        set
+        {
+            horizontalJumpForce = value;
+        }
+    }
+
+    public float JumpMaxVelocity
+    {
+        get
+        {
+            return jumpMaxVelocity;
+        }
+        set
+        {
+            jumpMaxVelocity = value;
         }
     }
 
@@ -221,11 +269,11 @@ public class MovementModel : MonoBehaviour
         }
     }
 
-    public Boolean Jumped
+    public Boolean JumpingEnabled
     {
         get
         {
-            return jumped;
+            return jumpingEnabled;
         }
     }
 
@@ -261,22 +309,32 @@ public class MovementModel : MonoBehaviour
     public void StopMovement()
     {
         myRigidBody.velocity = Vector3.zero;
-        jumped = false;
+        jumpingEnabled = true;
     }
 
-    public void StopJump()
+    public void StopHorizontalMovement()
     {
-        jumped = false;
+        myRigidBody.velocity = Vector3.zero;
     }
 
-    public void Jump()
+    public void Landed()
     {
-        jumped = true;
+        justWallLaunched = false;
     }
 
-    public void WallHug()
+    public void EnableJumping()
     {
+        jumpingEnabled = true;
+    }
 
+    public void DisableJumping()
+    {
+        jumpingEnabled = false;
+    }
+
+    public void WallJump()
+    {
+        justWallLaunched = true;
     }
 
     public void MoveHorizontally( int direction )
@@ -288,6 +346,13 @@ public class MovementModel : MonoBehaviour
     {
         float forceValue = direction * horizontalAcceleration;
         deltaForces = new Vector2( deltaForces.x + forceValue, deltaForces.y );
+    }
+
+    public void ApplyVelocityTransfer( Vector2 velocity, float angle )
+    {
+        transferingVelocity = true;
+        velocityToTransfer = velocity;
+        angleOfTransfer = angle;
     }
 
     #endregion
@@ -306,6 +371,10 @@ public class MovementModel : MonoBehaviour
             horizontalAcceleration = PlayerPrefs.GetFloat( "HorizontalAcceleration" );
             gravityScale = PlayerPrefs.GetFloat( "GravityScale" );
             linearDrag = PlayerPrefs.GetFloat( "LinearDrag" );
+            jumpForce = PlayerPrefs.GetFloat( "JumpForce" );
+            horizontalJumpForce = PlayerPrefs.GetFloat( "HorizontalJumpForce" );
+            jumpMaxVelocity = PlayerPrefs.GetFloat( "JumpMaxVelocity" );
+            horizontalJumpVelocity = PlayerPrefs.GetFloat( "HorizontalJumpVelocity" );
 
             Boolean.TryParse( PlayerPrefs.GetString( "ParabolicJump" ), out parabolicJump );
         }
@@ -340,17 +409,30 @@ public class MovementModel : MonoBehaviour
             {
                 float y = Mathf.Clamp( myRigidBody.velocity.y, 0, terminalVelocity );
                 myRigidBody.velocity = new Vector2( myRigidBody.velocity.x, y );
-                myRigidBody.AddRelativeForce( new Vector2( 0, 100f ) );
+                myRigidBody.AddRelativeForce( new Vector2( 0, jumpForce ), ForceMode2D.Impulse );
             }
             else
             {
                 myRigidBody.velocity = new Vector2( myRigidBody.velocity.x, jumpMaxVelocity );
             }
+
+            myRigidBody.AddRelativeForce( deltaForces );
+        }
+        else if ( state == MovementState.WALL_LAUNCH )
+        {
+            if ( justWallLaunched )
+            {
+                float y = Mathf.Clamp( myRigidBody.velocity.y, 0, terminalVelocity );
+                myRigidBody.velocity = new Vector2( myRigidBody.velocity.x, y );
+                myRigidBody.AddRelativeForce( new Vector2( horizontalJumpForce * Mathf.Round( manager.WallHugDirection ), jumpForce ), ForceMode2D.Impulse );
+
+                justWallLaunched = false;
+            }
+
             myRigidBody.AddRelativeForce( deltaForces );
         }
         else if ( state == MovementState.JUMPED || state == MovementState.FALLING )
         {
-            myRigidBody.velocity = new Vector2( myRigidBody.velocity.x, myRigidBody.velocity.y );
             myRigidBody.AddRelativeForce( deltaForces );
         }
         else if ( state == MovementState.HITTING_WALL )
@@ -360,16 +442,62 @@ public class MovementModel : MonoBehaviour
         }
         else if ( state == MovementState.HUGGING_WALL )
         {
-            float y = Mathf.Lerp( myRigidBody.velocity.y, minimumFallingVelocity, gravityScale * Time.fixedDeltaTime );
-            myRigidBody.velocity = new Vector2( 0,  y );
+            float y = myRigidBody.velocity.y;
+
+            if ( transferingVelocity && ( ( angleOfTransfer <= 150 && angleOfTransfer >= 105 ) || ( angleOfTransfer >= 30 && angleOfTransfer <= 75 ) ) )
+            {
+                float transferPercent = 0f;
+                if ( angleOfTransfer >= 120 )
+                {
+                    transferPercent = 1f / ( Mathf.Round( ( 150 - angleOfTransfer ) / 15 ) );
+                }
+                else
+                {
+                    transferPercent = 1f / ( Mathf.Round( ( angleOfTransfer - 30 ) / 15 ) );
+                }
+                y += Mathf.Abs( velocityToTransfer.x * Mathf.Clamp( transferPercent, 0f, 3f ) );
+                transferingVelocity = false;
+            }
+
+            if ( myRigidBody.velocity.y < minimumFallingVelocity )
+            {
+                y = Mathf.Lerp( myRigidBody.velocity.y, minimumFallingVelocity, gravityScale * Time.fixedDeltaTime );
+            }
+            myRigidBody.velocity = new Vector2( 0, y );
             myRigidBody.AddRelativeForce( deltaForces );
         }
 
-        float xVel = Mathf.Clamp( myRigidBody.velocity.x, -horizontalTerminalVelocity, horizontalTerminalVelocity );
-        float yVel = Mathf.Clamp( myRigidBody.velocity.y, -terminalVelocity, terminalVelocity );
+        float xVel = myRigidBody.velocity.x;
+        float yVel = myRigidBody.velocity.y;
+
+        if ( state == MovementState.WALL_LAUNCH )
+        {
+            if ( horizontalJumpForce > horizontalTerminalVelocity )
+            {
+                xVel = Mathf.Clamp( myRigidBody.velocity.x, -horizontalJumpForce, horizontalJumpForce );
+            }
+            else
+            {
+                xVel = Mathf.Clamp( myRigidBody.velocity.x, -horizontalTerminalVelocity, horizontalTerminalVelocity );
+            }
+
+            if ( jumpForce > terminalVelocity )
+            {
+                yVel = Mathf.Clamp( myRigidBody.velocity.y, -jumpForce, jumpForce );
+            }
+            else
+            {
+                yVel = Mathf.Clamp( myRigidBody.velocity.y, -terminalVelocity, terminalVelocity );
+            }
+        }
+        else
+        {
+            xVel = Mathf.Clamp( myRigidBody.velocity.x, -horizontalTerminalVelocity, horizontalTerminalVelocity );
+            yVel = Mathf.Clamp( myRigidBody.velocity.y, -terminalVelocity, terminalVelocity );
+        }
 
         myRigidBody.velocity = new Vector2( xVel, yVel );
-        
+
         myRigidBody.velocity = Vector2.ClampMagnitude( myRigidBody.velocity, absoluteMaxVelocity );
 
         deltaForces = Vector2.zero;

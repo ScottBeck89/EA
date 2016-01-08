@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class HuggingWallState : IMovementState
 {
-    private MovementState state = MovementState.MOVING;
+    private MovementState state = MovementState.HUGGING_WALL;
 
     private MovementModel model;
 
@@ -28,11 +28,19 @@ public class HuggingWallState : IMovementState
 
     public void OnEnterState()
     {
-
+        if ( model.PreviousState == MovementState.JUMPING )
+        {
+            //model.ApplyVelocityTransfer( manager.ImpactVelocity, manager.ImpactAngle );
+        }
     }
 
     public void OnUpdateState(PlayerInputs input)
     {
+        if ( input.verticalInput < model.InputThreshold && !model.JumpingEnabled )
+        {
+            model.EnableJumping();
+        }
+
         if ( input.horizontalInput > model.InputThreshold && manager.WallHugDirection > 0f )
         {
             model.ApplyHorizontalForce( 1 );
@@ -48,6 +56,12 @@ public class HuggingWallState : IMovementState
         else
         {
             model.WallHangFactor = 1f;
+        }
+
+        if ( input.verticalInput > model.InputThreshold && model.JumpingEnabled )
+        {
+            model.WallJump();
+            manager.ChangeState( MovementState.WALL_LAUNCH );
         }
     }
 
