@@ -47,5 +47,9 @@ Temporary Items
 .apdisk
 
 
-./Temp
-./obj
+Temp
+obj
+Library/*
+Builds
+
+*.csproj
