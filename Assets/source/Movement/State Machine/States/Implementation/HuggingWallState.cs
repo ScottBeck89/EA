@@ -43,10 +43,12 @@ public class HuggingWallState : IMovementState
 
         if ( input.horizontalInput > model.InputThreshold && manager.WallHugDirection > 0f )
         {
+            manager.ChangeState( MovementState.FALL_FORGIVENESS );
             model.ApplyHorizontalForce( 1 );
         }
         else if ( input.horizontalInput < -model.InputThreshold && manager.WallHugDirection < 0f )
         {
+            manager.ChangeState( MovementState.FALL_FORGIVENESS );
             model.ApplyHorizontalForce( -1 );
         }
         else if ( Mathf.Abs( input.horizontalInput ) > model.InputThreshold )
@@ -68,5 +70,28 @@ public class HuggingWallState : IMovementState
     public void OnExitState()
     {
 
+    }
+
+    /// <summary>
+    /// Assumptions: Colliding with only the walls.
+    /// </summary>
+    /// <param name="collision"></param>
+    /// <param name="isEntering"></param>
+    public void CollisionChange( Collision2D collision, CollisionState collisionState )
+    {
+        if ( collisionState == CollisionState.ENTERING )
+        {
+            if ( collision.contacts[ 0 ].normal.y > 0.4f )
+            {
+                manager.ChangeState( MovementState.STOPPED );
+            }
+        }
+        else if ( collisionState == CollisionState.EXITING )
+        {
+            if ( manager.CurrentCollisions.Count == 0 )
+            {
+                manager.ChangeState( MovementState.FALL_FORGIVENESS );
+            }
+        }
     }
 }

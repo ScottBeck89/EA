@@ -5,6 +5,13 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
+public enum CollisionState
+{
+    ENTERING,
+    STAYING,
+    EXITING
+}
+
 public class MovementStateManager : MonoBehaviour
 {
     public MovementState StartingState = MovementState.STOPPED;
@@ -25,7 +32,7 @@ public class MovementStateManager : MonoBehaviour
 
     private Collider2D currentFloor = null;
 
-    private List<Collider2D> currentFloors = new List<Collider2D>();
+    private List<Collider2D> currentCollisions = new List<Collider2D>();
 
     private Vector3 StartingPosition;
 
@@ -53,15 +60,15 @@ public class MovementStateManager : MonoBehaviour
         }
     }
 
-    public List<Collider2D> CurrentFloors
+    public List<Collider2D> CurrentCollisions
     {
         get
         {
-            return currentFloors;
+            return currentCollisions;
         }
         set
         {
-            currentFloors = value;
+            currentCollisions = value;
         }
     }
 
@@ -240,23 +247,21 @@ public class MovementStateManager : MonoBehaviour
         {
             MovementModel.Landed();
 
-            if ( collision.contacts[ 0 ].normal.y > 0.4f )
+            if ( !currentCollisions.Contains( collision.collider ) )
             {
-                currentFloor = collision.collider;
-                ChangeStateImmediate( MovementState.STOPPED );
+                currentCollisions.Add( collision.collider );
             }
-            else if ( collision.contacts[ 0 ].normal.y < -0.4f )
+
+            if ( Mathf.Abs( collision.contacts[ 0 ].normal.x ) > 0.4f )
             {
-                ChangeStateImmediate( MovementState.FALLING );
-            }
-            else if ( Mathf.Abs( collision.contacts[ 0 ].normal.x ) > 0.4f && ( currentFloor == null || MovementModel.State == MovementState.FALLING ) )
-            {
-                impactAngle = SMath.VectorToDegree( collision.relativeVelocity );
-                impactVelocity = collision.relativeVelocity;
+                //for future implementation of wall velocity transfer.
+                //impactAngle = SMath.VectorToDegree( collision.relativeVelocity );
+                //impactVelocity = collision.relativeVelocity;
 
                 wallHugDirection = collision.contacts[ 0 ].normal.x;
-                ChangeStateImmediate( MovementState.HUGGING_WALL );
             }
+
+            CurrentState.CollisionChange( collision, CollisionState.ENTERING );
         }
         else if ( collision.collider.tag == "Environment" )
         {
@@ -268,40 +273,20 @@ public class MovementStateManager : MonoBehaviour
     {
         if ( collision.collider.tag == "floor" || editMode )
         {
-            if ( MovementModel.State == MovementState.STOPPED && Mathf.Abs( collision.contacts[ 0 ].normal.x ) > 0.4f && currentFloor == null )
-            {
-                ChangeState( MovementState.FALL_FORGIVENESS );
-            }
-            else if ( currentFloor == null && Mathf.Abs( collision.contacts[ 0 ].normal.x ) > 0.4f && MovementModel.State == MovementState.FALLING ) 
-            {
-                wallHugDirection = collision.contacts[ 0 ].normal.x;
-                ChangeState( MovementState.HUGGING_WALL );
-            }
+            CurrentState.CollisionChange( collision, CollisionState.STAYING );
         }
     }
 
     void OnCollisionExit2D( Collision2D collision )
     {
-        if ( collision.collider.tag == "floor" || editMode )
+         if ( collision.collider.tag == "floor" || editMode )
         {
-            if ( ( MovementModel.State != MovementState.JUMPING && collision.contacts[ 0 ].normal.y > 0.4f ) ||
-                ( MovementModel.State == MovementState.HITTING_WALL || MovementModel.State == MovementState.HUGGING_WALL && currentFloor == null ) )
+            if ( currentCollisions.Contains( collision.collider ) )
             {
-                currentFloor = null;
-                wallHugDirection = 0f;
-
-                ChangeState( MovementState.FALL_FORGIVENESS );
+                currentCollisions.Remove( collision.collider );
             }
-            else if ( MovementModel.State == MovementState.JUMPING && collision.contacts[ 0 ].normal.y > 0.4f )
-            {
-                currentFloor = null;
-                wallHugDirection = 0f;
 
-                if ( MovementModel.ParabolicJump )
-                {
-                    ChangeState( MovementState.FALLING );
-                }
-            }
+            CurrentState.CollisionChange( collision, CollisionState.EXITING );
         }
     }
 }

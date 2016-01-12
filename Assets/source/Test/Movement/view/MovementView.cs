@@ -348,6 +348,11 @@ public class MovementView : MonoBehaviour
         PlayerPrefs.SetString( "UseCustomSettings", "false" );
     }
 
+    public void Quit()
+    {
+        Application.Quit();
+    }
+
     public static float Round( float value, int digits )
     {
         float mult = Mathf.Pow( 10.0f, ( float ) digits );

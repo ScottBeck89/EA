@@ -49,7 +49,7 @@ public class JumpingState : IMovementState
     {
         jumpDeltaTime += Time.fixedDeltaTime;
 
-        if ( jumpDeltaTime > model.JumpLeniency || Mathf.Abs( input.verticalInput ) <= model.InputThreshold )
+        if ( jumpDeltaTime > model.JumpLeniency || Mathf.Abs( input.verticalInput ) <= model.InputThreshold || model.ParabolicJump )
         {
             manager.ChangeState( MovementState.FALLING );
         }
@@ -66,5 +66,36 @@ public class JumpingState : IMovementState
 
     public void OnExitState()
     {
+    }
+
+    /// <summary>
+    /// Assumptions: Either On the ground and beginning to jump with no wall collision, or on the ground and beginning to jump with wall collision, or no collision
+    /// </summary>
+    /// <param name="collision"></param>
+    /// <param name="isEntering"></param>
+    public void CollisionChange( Collision2D collision, CollisionState collisionState )
+    {
+        if ( collisionState == CollisionState.ENTERING )
+        {
+            if ( collision.contacts[ 0 ].normal.y > 0.4f )
+            {
+                manager.ChangeState( MovementState.STOPPED );
+            }
+            else if ( collision.contacts[ 0 ].normal.y < -0.4f )
+            {
+                manager.ChangeState( MovementState.FALLING );
+            }
+            else if ( collision.contacts[ 0 ].normal.x > 0.4f )
+            {
+                manager.ChangeState( MovementState.HUGGING_WALL );
+            }
+        }
+        else if ( collisionState == CollisionState.EXITING )
+        {
+            if ( manager.CurrentCollisions.Count == 1 && Mathf.Abs( manager.WallHugDirection ) > 0.4f )
+            {
+                manager.ChangeState( MovementState.HUGGING_WALL );
+            }
+        }
     }
 }

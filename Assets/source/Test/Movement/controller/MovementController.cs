@@ -203,22 +203,9 @@ public class MovementController : MonoBehaviour
                 {
                     if ( jumpDeltaTime > jumpLeniency || verticalInput == 0 )
                     {
-                        movementModel.State = MovementState.JUMPED;
+                        movementModel.State = MovementState.FALLING;
                     }
 
-                    if ( horizontalInput > movementModel.InputThreshold )
-                    {
-                        movementModel.ApplyHorizontalForce( 1 );
-                    }
-                    else if ( -horizontalInput > movementModel.InputThreshold )
-                    {
-                        movementModel.ApplyHorizontalForce( -1 );
-                    }
-
-                    break;
-                }
-            case MovementState.JUMPED:
-                {
                     if ( horizontalInput > movementModel.InputThreshold )
                     {
                         movementModel.ApplyHorizontalForce( 1 );
@@ -281,35 +268,6 @@ public class MovementController : MonoBehaviour
 
                     break;
                 }
-            case MovementState.HITTING_WALL:
-                {
-                    if ( movementModel.PreviousState != MovementState.JUMPING || verticalInput == 0 || jumpDeltaTime > jumpLeniency )
-                    {
-                        movementModel.State = MovementState.HUGGING_WALL;
-                        break;
-                    }
-
-                    if ( horizontalInput > movementModel.InputThreshold && wallHugDirection > 0f )
-                    {
-                        //move off the wall
-                        movementModel.State = MovementState.FALL_FORGIVENESS;
-                    }
-                    else if ( horizontalInput < movementModel.InputThreshold && wallHugDirection < 0f )
-                    {
-                        //move off the wall
-                        movementModel.State = MovementState.FALL_FORGIVENESS;
-                    }
-                    else if ( Mathf.Abs( horizontalInput ) > movementModel.InputThreshold )
-                    {
-                        movementModel.WallHangFactor = 0.75f;
-                    }
-                    else
-                    {
-                        movementModel.WallHangFactor = 1f;
-                    }
-
-                    break;
-                }
             case MovementState.HUGGING_WALL:
                 {
                     if ( horizontalInput > movementModel.InputThreshold && wallHugDirection > 0f )
@@ -359,12 +317,12 @@ public class MovementController : MonoBehaviour
             else if ( collision.contacts[ 0 ].normal.y < -0.4f )
             {
                 currentFloor = null;
-                movementModel.State = MovementState.JUMPED;
+                movementModel.State = MovementState.FALLING;
             }
             else if ( Mathf.Abs( collision.contacts[ 0 ].normal.x ) > .6f && currentFloor == null )
             {
                 wallHugDirection = collision.contacts[ 0 ].normal.x;
-                movementModel.State = MovementState.HITTING_WALL;
+                movementModel.State = MovementState.HUGGING_WALL;
             }
         }
         else if ( collision.collider.tag == "Environment" )
@@ -378,8 +336,7 @@ public class MovementController : MonoBehaviour
         if ( collision.collider.tag == "floor" || editMode )
         {
             if ( movementModel.State == MovementState.MOVING || movementModel.State == MovementState.STOPPED || 
-                movementModel.State == MovementState.ACCELERATING && collision.contacts[ 0 ].normal.y > 0.4f || 
-                movementModel.State == MovementState.HITTING_WALL || movementModel.State == MovementState.HUGGING_WALL )
+                movementModel.State == MovementState.ACCELERATING && collision.contacts[ 0 ].normal.y > 0.4f || movementModel.State == MovementState.HUGGING_WALL )
             {
                 currentFloor = null;
 

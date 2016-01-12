@@ -55,4 +55,28 @@ public class WallLaunchState : IMovementState
     {
 
     }
+
+    /// <summary>
+    /// Assumptions: First only wall collisions, then no collisions.
+    /// </summary>
+    /// <param name="collision"></param>
+    /// <param name="isEntering"></param>
+    public void CollisionChange( Collision2D collision, CollisionState collisionState )
+    {
+        if ( collisionState == CollisionState.ENTERING )
+        {
+            if ( collision.contacts[ 0 ].normal.y > 0.4f )
+            {
+                manager.ChangeState( MovementState.STOPPED );
+            }
+            else if ( collision.contacts[ 0 ].normal.y < -0.4f )
+            {
+                manager.ChangeState( MovementState.FALLING );
+            }
+            else if ( Mathf.Abs( collision.contacts[ 0 ].normal.x ) > 0.4f )
+            {
+                manager.ChangeState( MovementState.HUGGING_WALL );
+            }
+        }
+    }
 }

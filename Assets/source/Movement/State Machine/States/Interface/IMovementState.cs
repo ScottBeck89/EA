@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UnityEngine;
 
 public interface IMovementState
 {
@@ -29,4 +30,6 @@ public interface IMovementState
     /// Leaves a state.
     /// </summary>
     void OnExitState();
+
+    void CollisionChange( Collision2D collision, CollisionState collisionState );
 }

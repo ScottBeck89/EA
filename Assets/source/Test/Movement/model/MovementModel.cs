@@ -13,16 +13,21 @@ public enum MovementState
     FALL_FORGIVENESS,
     FALLING,
     JUMPING,
-    JUMPED,
-    HITTING_WALL,
     WALL_LAUNCH,
     HUGGING_WALL,
 }
+
 [Serializable]
-[RequireComponent(typeof( Rigidbody2D ))]
+[RequireComponent(typeof( Rigidbody2D ), typeof(MovementStateManager))]
 public class MovementModel : MonoBehaviour
 {
+    #region Public Members
+
     public MovementStateManager manager;
+
+    #endregion
+
+    #region Private Members
 
     private Rigidbody2D myRigidBody;
 
@@ -75,6 +80,10 @@ public class MovementModel : MonoBehaviour
     private float angleOfTransfer = 0f;
 
     private Boolean justWallLaunched = false;
+
+    private Boolean midAirJumpingEnabled = false;
+
+    #endregion
 
     #region Properties
 
@@ -302,6 +311,18 @@ public class MovementModel : MonoBehaviour
         }
     }
 
+    public Boolean MidAirJumpingEnabled
+    {
+        get
+        {
+            return midAirJumpingEnabled;
+        }
+        set
+        {
+            midAirJumpingEnabled = value;
+        }
+    }
+
     #endregion
 
     #region Public Methods
@@ -400,7 +421,6 @@ public class MovementModel : MonoBehaviour
         }
         else if ( state == MovementState.STOPPED )
         {
-            if ( previousState == MovementState.HITTING_WALL )
             myRigidBody.velocity = new Vector2( 0, myRigidBody.velocity.y );
         }
         else if ( state == MovementState.JUMPING )
@@ -431,13 +451,8 @@ public class MovementModel : MonoBehaviour
 
             myRigidBody.AddRelativeForce( deltaForces );
         }
-        else if ( state == MovementState.JUMPED || state == MovementState.FALLING )
+        else if ( state == MovementState.FALLING )
         {
-            myRigidBody.AddRelativeForce( deltaForces );
-        }
-        else if ( state == MovementState.HITTING_WALL )
-        {
-            myRigidBody.velocity = new Vector2( 0, myRigidBody.velocity.y );
             myRigidBody.AddRelativeForce( deltaForces );
         }
         else if ( state == MovementState.HUGGING_WALL )
