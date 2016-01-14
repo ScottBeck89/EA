@@ -108,6 +108,12 @@ public class MovementStateManager : MonoBehaviour
         StartingPosition = transform.position;
     }
 
+    public void LaunchPlayer( float force )
+    {
+        ChangeStateImmediate( MovementState.FALLING );
+        MovementModel.VerticalLaunch( force );
+    }
+
     public void editModeToggle()
     {
         editMode = !editMode;

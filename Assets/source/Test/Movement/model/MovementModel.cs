@@ -81,7 +81,15 @@ public class MovementModel : MonoBehaviour
 
     private Boolean justWallLaunched = false;
 
+    private Boolean justLaunched = false;
+
+    private float launchForce = 0f;
+
     private Boolean midAirJumpingEnabled = false;
+
+    private float deleteMeHeight = 0f;
+
+    private float deleteMestartingHeight = 0f;
 
     #endregion
 
@@ -358,6 +366,12 @@ public class MovementModel : MonoBehaviour
         justWallLaunched = true;
     }
 
+    public void VerticalLaunch( float force )
+    {
+        justLaunched = true;
+        launchForce = force;
+    }
+
     public void MoveHorizontally( int direction )
     {
         horizontalDirection = direction;
@@ -422,6 +436,8 @@ public class MovementModel : MonoBehaviour
         else if ( state == MovementState.STOPPED )
         {
             myRigidBody.velocity = new Vector2( 0, myRigidBody.velocity.y );
+
+            deleteMeHeight = 0f;
         }
         else if ( state == MovementState.JUMPING )
         {
@@ -453,6 +469,22 @@ public class MovementModel : MonoBehaviour
         }
         else if ( state == MovementState.FALLING )
         {
+            if ( justLaunched )
+            {
+                deleteMestartingHeight = transform.position.y;
+                myRigidBody.velocity = new Vector2( myRigidBody.velocity.x, 0 );
+                myRigidBody.AddRelativeForce( new Vector2( 0, launchForce ), ForceMode2D.Impulse );
+                justLaunched = false;
+            }
+
+            float offSet = transform.position.y - deleteMestartingHeight;
+
+            if ( offSet > deleteMeHeight )
+            {
+                deleteMeHeight = offSet;
+                Debug.Log( "Max Height: " + deleteMeHeight );
+            }
+
             myRigidBody.AddRelativeForce( deltaForces );
         }
         else if ( state == MovementState.HUGGING_WALL )
@@ -508,12 +540,12 @@ public class MovementModel : MonoBehaviour
         else
         {
             xVel = Mathf.Clamp( myRigidBody.velocity.x, -horizontalTerminalVelocity, horizontalTerminalVelocity );
-            yVel = Mathf.Clamp( myRigidBody.velocity.y, -terminalVelocity, terminalVelocity );
+            yVel = Mathf.Clamp( myRigidBody.velocity.y, -terminalVelocity, 1000f );
         }
 
         myRigidBody.velocity = new Vector2( xVel, yVel );
 
-        myRigidBody.velocity = Vector2.ClampMagnitude( myRigidBody.velocity, absoluteMaxVelocity );
+        //myRigidBody.velocity = Vector2.ClampMagnitude( myRigidBody.velocity, absoluteMaxVelocity );
 
         deltaForces = Vector2.zero;
     }

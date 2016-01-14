@@ -16,6 +16,8 @@ public class JumpingState : IMovementState
 
     private float jumpDeltaTime = 0f;
 
+    private Boolean transitionToHugging = false;
+
     public MovementState State
     {
         get
@@ -51,7 +53,15 @@ public class JumpingState : IMovementState
 
         if ( jumpDeltaTime > model.JumpLeniency || Mathf.Abs( input.verticalInput ) <= model.InputThreshold || model.ParabolicJump )
         {
-            manager.ChangeState( MovementState.FALLING );
+            if ( transitionToHugging )
+            {
+                manager.ChangeState( MovementState.HUGGING_WALL );
+                transitionToHugging = false;
+            }
+            else
+            {
+                manager.ChangeState( MovementState.FALLING );
+            }
         }
 
         if ( input.horizontalInput > model.InputThreshold )
@@ -94,7 +104,12 @@ public class JumpingState : IMovementState
         {
             if ( manager.CurrentCollisions.Count == 1 && Mathf.Abs( manager.WallHugDirection ) > 0.4f )
             {
-                manager.ChangeState( MovementState.HUGGING_WALL );
+                transitionToHugging = true;
+                //manager.ChangeState( MovementState.HUGGING_WALL );
+            }
+            else
+            {
+                transitionToHugging = false;
             }
         }
     }
